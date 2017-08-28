@@ -26,7 +26,14 @@ if ispc
                       vidmp4);
     
     % execute it
-    system(command);
+    status = system(command);
+    
+    if status==0
+        disp('Conversion finished successfully');
+    else
+        disp('Something went wrong during conversion!');
+    end
+    
 else
     disp('Platform not yet supported.');
 end
