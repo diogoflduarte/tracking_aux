@@ -1,4 +1,4 @@
-function lm_rotateVideo(vid)
+function lm_rotateVideo(vid, varargin)
 % clockwise rotates a video 'vid' by 90 degrees and OVERWRITES the
 % existing file. If there is a background .png file with the same name as
 % 'vid', it is rotated and OVERWRITTEN as well. Use with caution.
@@ -7,12 +7,20 @@ function lm_rotateVideo(vid)
 %        'C:\libav-x86_64-w64-mingw32-11.7\usr\bin'
 %        or else just change the path
 %
-% USAGE:    lm_rotateVideo(vid, ang), 'vid' is a string and the file must
-%                                     exist, and 'ang' must be a scalar
+% USAGE:    lm_rotateVideo(vid),      'vid' is a string and the file must
+%                                     exist
+%           lm_rotateVideo(vid, 'rot', 'clock')  [clockwise]
+%           lm_rotateVideo(vid, 'rot', 'cclock') [counterclockwise,default]
 %
 % Diogo Duarte (2017)
 
 % ............  input checks  .............................................
+
+ip = inputParser; % for parsing name-variable inputs
+ip.addParameter('rot',  'cclock', @isgoodrot);
+parse(ip, varargin{:});
+% make them simple vars again
+rot = ip.Results.rot;
 
 if ~exist(vid, 'file')
     error('Video file not found in lm_rotateVideo.');
@@ -26,9 +34,10 @@ vid2 = fullfile(p, strcat(name, '_r', ext)); % dummy
 if ispc
     cmd_bin =  'C:\libav-x86_64-w64-mingw32-11.7\usr\bin';
     conv_cmd = fullfile(cmd_bin, 'avconv');
-    command = sprintf('%s -i %s -vf transpose=cclock %s -y', ...
+    command = sprintf('%s -i %s -vf transpose=%s %s -y', ...
                       conv_cmd, ...
                       vid, ...
+                      rot, ...
                       vid2);
     % execute it
     status = system(command);
@@ -62,4 +71,12 @@ end
 % pause(0.3);
 % delete(vid2);
 
+end
+
+function grot = isgoodrot(rot)
+if strcmp(rot, 'cclock') || strcmp(rot, 'clock')
+    grot = 1;
+else 
+    grot = 0;
+end
 end
