@@ -1,7 +1,7 @@
 function lm_DisplayTracksWrapper(vid, outputDir)
 % wrapper function so that I can visualize results (with
 % LocoMouse_DisplayTracks)
-% lm_DisplayTracksWrapper(vid_name)
+% lm_DisplayTracksWrapper(vid_name, outputDir)
 %
 % assumes there is a background file in .png format in the same location as
 % the video (.avi) file
@@ -13,6 +13,8 @@ function lm_DisplayTracksWrapper(vid, outputDir)
 % EXAMPLE:
 %   vid = 'E:\DiogoDuarte\data\locomouse_debug\short';
 %   outputDir = fullfile(vid, 'output');
+%
+% Diogo Duarte (2017)
 
 [vidDir, vidName, ext] = fileparts(vid);
 

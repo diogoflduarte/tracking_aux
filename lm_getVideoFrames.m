@@ -12,6 +12,8 @@ video_read_start = tic;
 switch v.VideoFormat
     case 'RGB24'
         numChannels=3;
+    case 'Grayscale'
+        numChannels=1;
     otherwise
         error('For now, only RGB24-encoded videos are supported.');
 end
