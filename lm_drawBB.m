@@ -13,6 +13,10 @@ if vid==0
     return;
 end
 
+% variables for counting if it's the first time something is being called
+isFirstMouse = 1;
+isFirstRect  = 1;
+
 % data line is Nlines after BB header in yml file:
 Nlines = 4; % THIS IS IMPORTANT (and maybe not optimal)
 
@@ -50,8 +54,10 @@ update_mouseGUI(ax, vm, frame);
         switch view
             case 'side'
                 bb.sv_vals = round(rect);
+                updateRectangles('side');
             case 'bottom'
                 bb.bv_vals = round(rect);
+                updateRectangles('bottom');
         end
         updateBBvals(view);
     end
@@ -120,8 +126,12 @@ update_mouseGUI(ax, vm, frame);
     function update_mouseGUI(ax, vm, frame)
         % updates mouse image
         tmpFrame = vm(:,:,1,frame);
-        imagesc(ax, tmpFrame);
-        colormap gray;
+        if isFirstMouse
+            im = imagesc(ax, tmpFrame);
+            colormap gray;
+            isFirstMouse = 0;
+            updateRectangles();
+        end
     end
     function updateBBvals(view)
         switch view
@@ -151,6 +161,33 @@ update_mouseGUI(ax, vm, frame);
             lm_writeYML(ymlfile, content);
         end
     end
+    function updateRectangles(view)
+        % side is green, bottom is yellow
+        if isFirstRect % first time created
+            hold on;
+            bb.r_sv = rectangle();
+            bb.r_bv = rectangle();
+            set(bb.r_sv, 'Visible', 'Off');
+            set(bb.r_bv, 'Visible', 'Off');
+            isFirstRect = 0;
+        else
+            switch view
+                case 'side'
+                    set(bb.r_sv, 'Visible', 'On');
+                    set(bb.r_sv, 'position', bb.sv_vals);
+                    set(bb.r_sv, 'edgecolor', 'g');
+                case 'bottom'
+                    set(bb.r_bv, 'Visible', 'On');
+                    set(bb.r_bv, 'position', bb.bv_vals);
+                    set(bb.r_bv, 'edgecolor', 'y');
+            end
+        end
+    end
+%     function rect = getrect_and_draw(ax)
+%         rect = getrect(ax);
+%         updateRectangles('side');
+%         updateRectangles('bottom');
+%     end
 end
 
 function line_num = find_BBline(content, view)
