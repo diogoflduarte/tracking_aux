@@ -16,7 +16,7 @@ end
 % variables for counting if it's the first time something is being called
 isFirstMouse = 1;
 isFirstRect  = 1;
-
+isFlipped    = 0;
 % data line is Nlines after BB header in yml file:
 Nlines = 4; % THIS IS IMPORTANT (and maybe not optimal)
 
@@ -25,9 +25,10 @@ bb.sv_vals = [0 0 0 0];
 bb.bv_vals = [0 0 0 0];
 
 % kind of global vars so that every function can acces it
-tbl_sv = [];
-tbl_bv = [];
-
+tbl_sv = [];% tables with rectangle values
+tbl_bv = [];%
+im = [];    % mouse image
+tmpFrame = [];
 % read video file
 vm = lm_getVideoFrames(vid);
 
@@ -87,11 +88,20 @@ update_mouseGUI(ax, vm, frame);
             'xtick', [], ...
             'ytick', []);
         
+        % flip button
+        flipbtn = uicontrol('style', 'pushbutton', 'parent', hh);
+        set(flipbtn,    'units', 'normalized', ...
+                        'position', [0.82 0.80 0.1 0.05], ...
+                        'string', 'FLIP', ...
+                        'callback', @flipFrame);
+        
+        % side view button
         bb_sv = uicontrol('style', 'pushbutton', 'parent', hh);
         set(bb_sv, 'units', 'normalized', ...
             'position', [0.82 0.65 0.1 0.05], ...
             'string', 'side v', ...
             'callback', {@get_mouseRect, 'side'});
+        % bottom view bottom
         bb_bv = uicontrol('style', 'pushbutton', 'parent', hh);
         set(bb_bv, 'units', 'normalized', ...
             'position', [0.82 0.50 0.1 0.05], ...
@@ -125,12 +135,21 @@ update_mouseGUI(ax, vm, frame);
     end
     function update_mouseGUI(ax, vm, frame)
         % updates mouse image
-        tmpFrame = vm(:,:,1,frame);
         if isFirstMouse
+            tmpFrame = vm(:,:,1,frame);
+            if isFlipped
+                tmpFrame = fliplr(vm(:,:,1,frame));
+            end
             im = imagesc(ax, tmpFrame);
             colormap gray;
             isFirstMouse = 0;
             updateRectangles();
+        else
+            tmpFrame = vm(:,:,1,frame);
+            if isFlipped
+                tmpFrame = fliplr(vm(:,:,1,frame));
+            end
+            set(im, 'CData', tmpFrame);
         end
     end
     function updateBBvals(view)
@@ -188,6 +207,14 @@ update_mouseGUI(ax, vm, frame);
 %         updateRectangles('side');
 %         updateRectangles('bottom');
 %     end
+    function flipFrame(src, evt)
+        if ~isFlipped
+            isFlipped = 1;
+        else
+            isFlipped = 0;
+        end
+        update_mouseGUI(ax, vm, frame);
+    end
 end
 
 function line_num = find_BBline(content, view)
