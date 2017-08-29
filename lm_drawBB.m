@@ -35,6 +35,7 @@ vm = lm_getVideoFrames(vid);
 % get height and width
 vdata.height = size(vm,1);
 vdata.width  = size(vm,2);
+vdata.nFrames = size(vm,4);
 
 % make figure for showing mouse
 % TODO: support for distortion (constrained vs non-constrained views)
@@ -131,6 +132,15 @@ update_mouseGUI(ax, vm, frame);
                         'position', [0.82 0.30 0.1 0.05], ...
                         'string', 'Save to YML', ...
                         'callback', {@save_to_yml});
+                    
+        % make slider
+        slider_frames = uicontrol('style', 'slider', 'parent', hh);
+        set(slider_frames,  'units', 'normalized', ...
+                            'position', [0.1 0.05 0.5 0.03], ...
+                            'string', '', ...
+                            'callback', {@updateFrameNumber, ...
+                                             slider_frames});
+                    
                         
     end
     function update_mouseGUI(ax, vm, frame)
@@ -202,16 +212,21 @@ update_mouseGUI(ax, vm, frame);
             end
         end
     end
-%     function rect = getrect_and_draw(ax)
-%         rect = getrect(ax);
-%         updateRectangles('side');
-%         updateRectangles('bottom');
-%     end
     function flipFrame(src, evt)
         if ~isFlipped
             isFlipped = 1;
         else
             isFlipped = 0;
+        end
+        update_mouseGUI(ax, vm, frame);
+    end
+    function updateFrameNumber(src, evt, inval)
+        
+        frame = floor(inval.Value*vdata.nFrames);
+        if frame < 1
+            frame = 1;
+        elseif frame > vdata.nFrames
+            frame = vdata.nFrames;
         end
         update_mouseGUI(ax, vm, frame);
     end
