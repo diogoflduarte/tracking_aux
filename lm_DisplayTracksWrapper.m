@@ -1,4 +1,4 @@
-function lm_DisplayTracksWrapper(vidDir, vidName, outputDir)
+function lm_DisplayTracksWrapper(vid, outputDir)
 % wrapper function so that I can visualize results (with
 % LocoMouse_DisplayTracks)
 % lm_DisplayTracksWrapper(vid_name)
@@ -7,14 +7,14 @@ function lm_DisplayTracksWrapper(vidDir, vidName, outputDir)
 % the video (.avi) file
 % 
 % INPUTS:
-%   vidDir: directory where video and background are
-%   vidName: video name without the extension
+%   full path [IMPORTANT] to video
 %   outputDir: as specified in LocoMouse_Tracker (w/ subfolders 'data' and
 %              images
 % EXAMPLE:
-%   vidDir = 'E:\DiogoDuarte\data\locomouse_debug';
-%   vidName = 'short';
-%   outputDir = fullfile(vidDir, 'output');
+%   vid = 'E:\DiogoDuarte\data\locomouse_debug\short';
+%   outputDir = fullfile(vid, 'output');
+
+[vidDir, vidName, ext] = fileparts(vid);
 
 % data output file resulting from the tracker
 outFile = fullfile(outputDir, 'data', strcat(vidName, '.mat'));
@@ -22,7 +22,7 @@ outFile = fullfile(outputDir, 'data', strcat(vidName, '.mat'));
 T = load(outFile);
 
 % complete struct T with necessary stuff
-T.data.vid = fullfile(vidDir, strcat(vidName, '.avi'));
+T.data.vid = fullfile(vidDir, strcat(vidName, ext));
 T.data.bkg = fullfile(vidDir, strcat(vidName, '.png'));
 
 % display results like you would using LocoMouse_DisplayTracks
