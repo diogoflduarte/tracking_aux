@@ -150,7 +150,10 @@ update_mouseGUI(ax, vm, frame);
             if isFlipped
                 tmpFrame = fliplr(vm(:,:,1,frame));
             end
-            im = imagesc(ax, tmpFrame);
+            % for comptaibility with older matlab versions
+            axes(ax);
+            im = imagesc(tmpFrame);
+%             im = imagesc(ax, tmpFrame);
             colormap gray;
             isFirstMouse = 0;
             updateRectangles();
