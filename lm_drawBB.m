@@ -16,6 +16,7 @@ end
 % variables for counting if it's the first time something is being called
 isFirstMouse = 1;
 isFirstRect  = 1;
+isFirstSplitLine = 1;
 isFlipped    = 0;
 % data line is Nlines after BB header in yml file:
 Nlines = 4; % THIS IS IMPORTANT (and maybe not optimal)
@@ -23,10 +24,12 @@ Nlines = 4; % THIS IS IMPORTANT (and maybe not optimal)
 % outputs
 bb.sv_vals = [0 0 0 0];
 bb.bv_vals = [0 0 0 0];
+sl.val = 1;
 
 % kind of global vars so that every function can acces it
 tbl_sv = [];% tables with rectangle values
 tbl_bv = [];%
+val_sl = [];% split line value
 im = [];    % mouse image
 tmpFrame = [];
 % read video file
@@ -133,15 +136,63 @@ update_mouseGUI(ax, vm, frame);
                         'string', 'Save to YML', ...
                         'callback', {@save_to_yml});
                     
+        save_btn_2 = uicontrol('style', 'pushbutton', 'parent', hh); 
+        set(save_btn_2,   'units', 'normalized', ...
+                        'position', [0.82 0.2 0.15 0.05], ...
+                        'string', 'Save Calibration File', ...
+                        'callback', {@save_calibration});
+                    
         % make slider
         slider_frames = uicontrol('style', 'slider', 'parent', hh);
         set(slider_frames,  'units', 'normalized', ...
-                            'position', [0.1 0.05 0.5 0.03], ...
+                            'position', [0.1 0.02 0.5 0.03], ...
                             'string', '', ...
                             'callback', {@updateFrameNumber, ...
                                              slider_frames});
-                    
-                        
+                                    
+        % make split line controller 
+        sl_c = uicontrol('style', 'slider', 'parent', hh);
+        set(sl_c, 'units', 'normalized', ...
+                  'position', [0.65 0.1 0.3 0.03], ...
+                  'callback', {@updateSplitLine, sl_c});
+        
+        % show title and value for split line
+        ttl_hdr = uicontrol('style', 'text', 'parent', hh);
+        set(ttl_hdr,        'string', 'Split Line', ...
+                           'units', 'normalized', ...
+                           'position', sl_c.Position+[0 0.05 0 0]);
+        val_sl  = uicontrol('style', 'text', 'parent', hh);
+        set(val_sl,         'string', num2str(sl.val), ...
+                            'units', 'normalized', ...
+                            'horizontalalignment', 'left', ...
+                            'fontsize', 7, ...
+                            'position', sl_c.Position+[0 -0.05 0.06 0]);
+                                 
+    end        
+    function updateSplitLine(src,evt, sliderObj)
+        sl.val = floor(sliderObj.Value*vdata.height);
+        if sliderObj.Value == 0
+            sl = 1;
+        elseif sliderObj.Value > vdata.height
+            sl = vdata.height-1;
+        end
+        
+        if isFirstSplitLine % first time created
+            hold on;
+            a = 1:vdata.width;
+            sl.l = line(a,repmat(sl.val,length(a)),'Color','w','LineWidth',2);
+            set(sl.l, 'Visible', 'Off');
+            isFirstSplitLine = 0;
+        else
+            delete(sl.l)
+            a = 1:vdata.width;
+            sl.l = line(a,repmat(sl.val,length(a)),'Color','w','LineWidth',2);
+            set(sl.l, 'Visible', 'On');
+            updateSLValue(sl.val)
+        end
+    end
+    function updateSLValue(value)
+        set(val_sl, 'string', num2str(value));
     end
     function update_mouseGUI(ax, vm, frame)
         % updates mouse image
@@ -192,6 +243,17 @@ update_mouseGUI(ax, vm, frame);
             % overwrite YML file
             lm_writeYML(ymlfile, content);
         end
+    end
+    function save_calibration(src,evt)
+        m = zeros(vdata.height,vdata.width);
+        m(:) =  1:(vdata.height*vdata.width);
+        ind_warp_mapping = m;
+        inv_ind_warp_mapping = m;
+        split_line = sl.val;
+        
+        pathname = uigetdir;
+        name = sprintf('calibration_%d_%d_%d.mat',vdata.height,vdata.width,split_line);
+        save(strcat(pathname,filesep,name),'ind_warp_mapping','inv_ind_warp_mapping','split_line')
     end
     function updateRectangles(view)
         % side is green, bottom is yellow
