@@ -1,0 +1,136 @@
+
+1. Download openCV source (3.0.0 for now)
+
+
+
+
+
+
+2. place the extracted folder in some directory (mine is under C:\opencv\opencv_joaofayad)
+
+
+
+
+
+
+3. set the following variables in windows environment:
+
+OPENCV_DIR32 = C:\opencv\opencv_joaofayad\build\x64\vc12
+OPENCV_DIR64 = C:\opencv\opencv_joaofayad\build\x64\vc12
+OPENCV_DIR = C:\opencv\opencv_joaofayad\build\x64\vc12
+
+And add %OPENCV_DIR%\bin to user path
+
+
+
+
+
+
+4. Create new project in Visual Studio:
+Visual C++  ->  console application  ->  empty project
+
+
+
+
+
+
+
+5. Open the project properties by right clicking the project name (in the solution explorer area)
+
+		
+5.1. FOR RELEASE (dropbown menu)
+	Target platform -> 8.1, Platform toolset -> Visual Studio 2015 (v140)
+	Condiguration Type -> Application(.exe), Character set -> Use Unicode char set
+	
+	 FOR DEBUGGING
+	Target platform -> 8.1, Platform toolset -> Visual Studio 2015 (v140)
+	Condiguration Type -> Application(.exe), Character set -> Use Unicode char set, Whole Program Optimization -> Use link time code generation
+
+	
+	
+	
+	
+	
+	
+	
+6. Change definitions for debug mode (configuration dropdown menu)
+
+6.1 C/C++ aditional include directories:
+	Add '$(OPENCV_DIR)\..\..\include' (without the apostrophes)
+	Add locomouse subfolders in the following order, top to bottom:
+		'Locomouse_Core', 'MyMat', 'match2nd', 'Candidates'
+	Warning level -> Level3 (/W3)
+	SDL checks -> Yes (/sdl)
+	
+6.2 C/C++ Optimization -> Disabled (/Od)
+	
+6.3 C/C++ Preprocessor, Preprocessor definitions:
+			_DEBUG
+			_CONSOLE
+			_SCL_SECURE_NO_WARNINGS
+	
+6.4 Linker general,  add '$(OPENCV_DIR)\lib' to additional library directories.
+	Linker general, enable incremental linking -> Yes (/INCREMENTAL) 
+
+6.5 Linker input, add 'opencv_ts300d.lib' and opencv_world300d.lib to additional dependencies.
+Note: I think 300 stands for version 3.0.0, so it's likely to change with version. d stands for debug, 
+      and there's and answer in a stack overflow thread which recommends using 'd' only for debugging.
+	  
+6.6 Linker debugging, Generate debug info -> true
+	  
+6.7 Linker System, SubSystem -> Console (/SUBSYSTEM:CONSOLE)
+	  
+6.8 Linker advanced, target platform should be machine x64
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+
+	  
+7.  Change definitions for release mode
+7.1 C/C++ aditional include directories:
+	Add '$(OPENCV_DIR)\..\..\include' (without the apostrophes)
+	Add locomouse subfolders in the following order, top to bottom:
+		'Locomouse_Core', 'MyMat', 'match2nd', 'Candidates'
+	Warning level -> Level3 (/W3)
+	SDL checks -> Yes (/sdl)
+	
+7.2 C/C++ Optimization -> Maximize speed (/O2). Enable intrinsic functions -> Yes (/Oi)
+	
+7.3  C/C++ Preprocessor, Preprocessor definitions: 
+		_SCL_SECURE_NO_WARNINGS
+		NDEBUG
+		_CONSOLE
+		
+7.4  C/C++ Code generation, Runtime Library -> Multi-threaded (/MT)
+		Enable function level linking -> Yes (/Gy)
+	
+7.5 Linker general, add '$(OPENCV_DIR)\lib' to additional library directories.
+	Linker general, enable incremental linking -> No (/INCREMENTAL:NO)
+
+7.6 Linker input, add 'opencv_ts300.lib' and opencv_world300.lib to additional dependencies.
+	(without the 'd' suffix)
+
+7.7 Linker debugging, Generate debug info -> true
+
+7.8 Linker System, SubSystem -> Console (/SUBSYSTEM:CONSOLE)
+
+7.9 Linker advanced, target platform should be machine x64
+
+
+
+
+
+
+8. Make sure build is at x64 bit:
+	Build tab, Configuration manager, x64 (instead of x86)
+
+
+
+
+For some reason I had to restart visual studio once so that everything (hello world) would work
+
+Diogo Duarte (2017)
