@@ -15,7 +15,8 @@ switch v.VideoFormat
     case 'Grayscale'
         numChannels=1;
     otherwise
-        error('For now, only RGB24-encoded videos are supported.');
+        error(strcat('For now, only RGB24 and Grayscale-encoded videos',...
+                     ' are supported.'));
 end
 
 % get number of frames

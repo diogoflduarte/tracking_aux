@@ -1,6 +1,8 @@
 function D = lm_loadLocoMouseYML(yaml_file)
 fid = fopen(yaml_file,'r');
 
+onCleanup(@finalCleanup);
+
 if fid < 0
     error('Failed to read input file %s.',yaml_file);
 end
@@ -54,11 +56,23 @@ yml_bounds(end,2) = length(content); % until the end
 % split them into different files
 fnms = make_YML_tmp_files(yaml_file, content, yml_bounds, hdrline);
 
+% TODO: find structarray yaml files in fnms
+fnms_sa = find_fnms_structArray(fnms);
+% TODO: split the sub-sub structs in groups of 100 (because that works)
+fnms = subsubSplit_structarrays(fnms);
+% TODO: new fnms cell should contain the sub-sub divisions
+
+
 % read them in a for loop
 for f = 1:numel(fnms)
     S_{f} = YAML.read(fnms{f});
+%     S_{f} = yaml.ReadYaml(fnms{f});
+    jheapcl;
+    fprintf('Reading yaml file %g / %g\n', f, numel(fnms));
 end
 % merge them
+% TODO: modify this so that struct arrays with the same name are
+% concatenated
 S = mergeS_cell(S_);
 
 % Transform the YAML structure into the expected MATLAB structure:
@@ -104,9 +118,8 @@ for i_frames = 1:S.N_frames
         
 end
 clear tracks_bottom;
-for f = 1:length(fnms)
-    delete(fnms{f});
-end
+
+finalCleanup();
 
 function M = readOpenCVMat(fid, N)
 
@@ -192,8 +205,25 @@ function M = getMatrix(mymat_struct)
 % C++ index starts at 0!
 M = reshape(mymat_struct.data,mymat_struct.n_rows,mymat_struct.n_cols);
 end
-
-
+function finalCleanup()
+if exist('fnms', 'var')
+    for f = 1:length(fnms)
+        delete(fnms{f});
+    end
+end
+        
+end
+function fnms_out = subsubSplit_structarrays(fnms)
+    % fnms_sa contain the indices of the fnms files to subsplit
+    % fnms is the cell with all the subYAML file names
+    fnms_big = fnms(find(fnms_sa));
+    fnms_intact = fnms(find(~fnms_sa));
+    fnms_out = fnms_intact;
+    for bF = 1:numel(fnms_big) % bF is big file 
+        tmpfnms = make_subYML_tmp_files(fnms_big{bF});
+        fnms_out = [fnms_out; tmpfnms];
+    end    
+end
 end
 
 function lines = findNonOpenCV(content)
@@ -208,7 +238,6 @@ for I=1:nLines
      end
 end
 end
-
 function fnms = make_YML_tmp_files(yaml_file, content, yml_bounds, hdrline)
 % this function takes the content of the yaml_file, crops it according with
 % the bounds, adds the header line to the top and then saves then as
@@ -253,8 +282,88 @@ S = struct();
 for I=1:numCells
     fields_sep = fieldnames(S_{I});
     for J=1:length(fields_sep)
-        S.(sprintf('%s',fields_sep{J})) = ...
+        if isfield(S, sprintf('%s',fields_sep{J}))
+            % get the dimension of concatenation
+            if isrow(S.(sprintf('%s',fields_sep{J})))
+                dim = 2;
+            elseif iscolumn(S.(sprintf('%s',fields_sep{J})))
+                dim = 1;
+            else
+                error('Not sure how to contactenate...');
+            end
+            S.(sprintf('%s',fields_sep{J})) = cat(dim, ...
+                S.(sprintf('%s',fields_sep{J})), ...
+                 S_{I}.(sprintf('%s',fields_sep{J}))  );
+        else
+            S.(sprintf('%s',fields_sep{J})) = ...
             S_{I}.(sprintf('%s',fields_sep{J}));
+        end
+        
     end
+end
+end
+function fnms_sa = find_fnms_structArray(fnms)
+% fins which fnms are of type struct array
+fnms_sa = zeros(numel(fnms),1);
+for I=1:length(fnms)
+    fnms_sa(I) = lm_YMLvar_isa(fnms{I}, 'structarray');
+end
+end
+function tmpfnms = make_subYML_tmp_files(bigfile)
+% splits te bigfile, which should be a struct array type single variable
+% yaml file, into small onees of length up to 100
+% 1: find how many array entries it contains
+bigfilecontent = lm_readYML(bigfile);
+dashes = 0;
+pos = [];
+
+for I=1:length(bigfilecontent)
+    if length(bigfilecontent{I})>3 && strcmpi(bigfilecontent{I}(4),'-')
+        pos = [pos I]; % pos is the arrray of lines where there are dashes
+        dashes = dashes + 1;
+    end
+end
+% 2: calculate how many files will be created
+numFiles = ceil(dashes/100);
+if numFiles<1 % may happen in one-line fields
+    numFiles=1;
+end
+
+% 3: determine bounds and write to files
+if numFiles==1
+    tmpfnms = {bigfile};
+else
+    varname = bigfilecontent{1}; % each subsubfile needs to have this
+    
+    % bounds should find 100 dashes and  associate those to the lines in
+    % the original files
+    
+    for nF = 1:numFiles-1
+        bounds = [pos((nF-1)*100+1)  pos(nF*100+1)-1];
+        [fullpath,fname,ext]=fileparts(bigfile);
+        tmpF = fullfile(fullpath, sprintf('%s_%g%s',fname, nF, ext));
+        tmpfnms{nF,1} = tmpF;
+        fid = fopen(tmpF, 'w+');
+        % get variable name and write to header
+        fprintf(fid, '%s', varname);
+        numLines = bounds(2)-bounds(1)+1;
+        for k=1:numLines
+            fprintf(fid, '%s', bigfilecontent{bounds(1)+k-1});
+        end
+        fclose(fid);
+    end
+    % statement for the last file
+    nF = numFiles;
+    bounds = [pos((nF-1)*100+1) length(bigfilecontent)];
+    [fullpath,fname,ext]=fileparts(bigfile);
+    tmpF = fullfile(fullpath, sprintf('%s_%g%s',fname, nF, ext));
+    tmpfnms{nF,1} = tmpF;
+    fid = fopen(tmpF, 'w+');
+    fprintf(fid, '%s', varname);
+    numLines = bounds(2)-bounds(1)+1;
+    for k=1:numLines
+        fprintf(fid, '%s', bigfilecontent{bounds(1)+k-1});
+    end
+    fclose(fid);
 end
 end

@@ -22,5 +22,7 @@ if ymlfile~=0
     
     fclose(fid);
     
+content=content(~cellfun('isempty',content));
+    
 end
 end

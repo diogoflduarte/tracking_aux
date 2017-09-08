@@ -15,7 +15,12 @@ T = load(dataFile);
 
 % location of the debug file
 debugFile = fullfile(outputDir,strcat('debug_',vidName,'.yml'));
-T.debug = importLocoMouseYAML(debugFile);
+debugMat  = fullfile(outputDir,strcat('debug_',vidName,'.mat'));
+if exist(debugMat, 'file')
+    T.debug = load(debugMat);
+else
+end
+T.debug = lm_loadLocoMouseYML(debugFile);
 
 % complete struct T with necessary stuff
 T.data.vid = fullfile(vidDir, strcat(vidName, ext));
