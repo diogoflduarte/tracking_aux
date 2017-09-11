@@ -1,4 +1,4 @@
-function lm_debugYML2mat(yaml_file)
+function matfile = lm_debugYML2mat(yaml_file)
 % converts YML debug file from locomouse t struct D (as usual) and then
 % saves struct D in the same directory as the yaml file
 %
