@@ -30,19 +30,31 @@ end
 
 vid2 = fullfile(p, strcat(name, '_r', ext)); % dummy
 
-% ............  rotate video using libav  .................................
-if ispc
-    cmd_bin =  'C:\libav-x86_64-w64-mingw32-11.7\usr\bin';
-    conv_cmd = fullfile(cmd_bin, 'avconv');
-    command = sprintf('%s -i %s -vf transpose=%s %s -y', ...
-                      conv_cmd, ...
-                      vid, ...
-                      rot, ...
-                      vid2);
-    % execute it
-    status = system(command);
-else
-    disp('Platform not yet supported.');
+% ............  rotate video using matlab  ................................
+
+% read original video (import to matlab)
+vid_vr = VideoReader(vid);
+vid_out = VideoWriter(vid2, 'Grayscale AVI');
+open(vid_out);
+
+% read original video and write transposed frame
+while hasFrame(vid_vr)
+    frameIM = im2uint8(readFrame(vid_vr));
+    
+    switch(rot)
+        case 'cclock'
+            writeVideo(vid_out, flipud(squeeze(frameIM(:,:,1))'));
+        case 'clock'
+            % I'm not too sure about this
+            writeVideo(vid_out, fliplr(squeeze(frameIM(:,:,1))'));
+    end
+end
+close(vid_out);
+clear vid_vr;
+delete(vid);
+pause(0.1);
+if ~exist(vid, 'file')
+    movefile(vid2, vid);
 end
 
 % ............  rotate the background, if exists,and save  ..............
@@ -52,24 +64,13 @@ else
     background = strcat(name, '.png');
 end
 
-% does not rotate if video rot fails
-if exist(background, 'file') && ~status 
+if exist(background, 'file')
     disp('Background exists. Rotating...');
     % read the image
     B = imread(background);
     B = imrotate(B, -90, 'nearest', 'loose');
     imwrite(B, background);
 end
-
-% ........... delete original video, change name of vid2 ..................
-
-% for some reason this is not working
-
-% delete(vid);
-% pause(0.3);
-% copyfile(vid2, vid);
-% pause(0.3);
-% delete(vid2);
 
 end
 
