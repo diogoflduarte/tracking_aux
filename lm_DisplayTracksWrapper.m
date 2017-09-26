@@ -18,6 +18,10 @@ function lm_DisplayTracksWrapper(vid, outputDir)
 
 [vidDir, vidName, ext] = fileparts(vid);
 
+if nargin<2
+    outputDir = fullfile(vidDir, 'output_tracking');
+end
+
 % data output file resulting from the tracker
 outFile = fullfile(outputDir, 'data', strcat(vidName, '.mat'));
 % load it onto struct T
@@ -28,5 +32,5 @@ T.data.vid = fullfile(vidDir, strcat(vidName, ext));
 T.data.bkg = fullfile(vidDir, strcat(vidName, '.png'));
 
 % display results like you would using LocoMouse_DisplayTracks
-LocoMouse_DisplayTracks({T.data,T.final_tracks,T.tracks_tail});
+LocoMouse_DisplayTracksDD({T.data,T.final_tracks,T.tracks_tail});
 end

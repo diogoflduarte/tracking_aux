@@ -23,15 +23,29 @@ end
 numFrames = floor(v.FrameRate*v.Duration);
 
 vm = zeros(v.Height, v.Width, numChannels, numFrames); % 3 for RGB channels
+
+switch v.BitsPerPixel
+    case 8
+        vm = uint8(vm);
+    case 24
+        vm = uint8(vm);
+    otherwise
+        disp('Is this bitrate correct?');
+        return;
+end
+
 ii = 1;
 
 fprintf('Reading video file ... ');
 
 while hasFrame(v)
     video = readFrame(v);
-    vm(:,:,:,ii) = video;
+    vm(:,:,:,ii) = uint8(video);
     ii = ii+1;
 end
+
+vm = squeeze(mean(vm,3)); % suppress one channel
+vm = uint8(vm); % force uint8 again....
 
 fprintf(' Done. (%.1f s for reading)\n', toc(video_read_start) );
 
